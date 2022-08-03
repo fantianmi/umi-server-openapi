@@ -1,0 +1,845 @@
+openapi: 3.0.3
+info:
+  description: API definition for Umiverse server apis
+  title: Umiverse Server API Spec
+  version: 2.0.0
+servers:
+- url: https://api-dev.umiverse.io/
+tags:
+- description: user apis
+  name: user
+- description: game apis
+  name: game
+- description: wallet apis
+  name: wallet
+- description: marketplace api
+  name: marketplace
+paths:
+  /auth/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "Login success, user info returned."
+        "403":
+          description: "Login failed, invalid id token"
+      summary: Login using firebase apple/google/twitter/facebook... etc service.(web3auth)
+      tags:
+      - auth
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: auth
+  /auth/google/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "Login success, user info returned."
+        "403":
+          description: "Login failed, invalid id token"
+      summary: Login using google service.
+      tags:
+      - auth
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: auth
+  /auth/apple/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "Login success, user info returned."
+        "403":
+          description: "Login failed, invalid id token"
+      summary: Login using apple service.
+      tags:
+      - auth
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: auth
+  /auth/logout:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+          description: user logout success.
+        "401":
+          $ref: '#/components/schemas/UnauthorizedError'
+        "403":
+          description: "Logout failed, invalid auth token"
+      security:
+      - bearerAuth: []
+      summary: user logout.
+      tags:
+      - auth
+      x-accepts: application/json
+      x-tags:
+      - tag: auth
+  /user/info:
+    get:
+      description: This api returns current user info.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Get user info detail success.
+        "401":
+          $ref: '#/components/schemas/UnauthorizedError'
+      security:
+      - bearerAuth: []
+      summary: Get user detail by user.
+      tags:
+      - user
+      x-accepts: application/json
+      x-tags:
+      - tag: user
+    post:
+      description: User can use this api to change info by themself.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserEditRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: "Change user info detail success, return changed user info."
+        "400":
+          description: change user profile fail(username null or duplicate)
+        "401":
+          $ref: '#/components/schemas/UnauthorizedError'
+      security:
+      - bearerAuth: []
+      summary: Change user info.
+      tags:
+      - user
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: user
+  /game/list:
+    get:
+      description: This api returns all games as list.
+      parameters:
+      - description: "GameList order, ALL or NEW, default is ALL"
+        explode: true
+        in: query
+        name: order
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Choose game by category
+        explode: true
+        in: query
+        name: category
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Game'
+                maxItems: 100
+                type: array
+          description: Get game list success.
+      summary: Get all game list.
+      tags:
+      - game
+      x-accepts: application/json
+      x-tags:
+      - tag: game
+  /game/{gameId}:
+    get:
+      parameters:
+      - description: the request game ID to search.
+        explode: false
+        in: path
+        name: gameId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+          description: Get game info success.
+      summary: Get game detail from server
+      tags:
+      - game
+      x-accepts: application/json
+      x-tags:
+      - tag: game
+  /game/{gameId}/items:
+    get:
+      parameters:
+      - description: the request game ID to search.
+        explode: false
+        in: path
+        name: gameId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GameItem'
+                type: array
+          description: Get game item list success.
+      summary: Get game items by gameId from server
+      tags:
+      - game
+      x-accepts: application/json
+      x-tags:
+      - tag: game
+  /wallet/balance:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceInfo'
+          description: query user balance success.
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: balance info not found.
+        "500":
+          description: balance info query internal error.
+      security:
+      - bearerAuth: []
+      summary: 当前用户账户总额
+      tags:
+      - wallet
+      x-accepts: application/json
+      x-tags:
+      - tag: wallet
+  /marketplace/{gameId}/items:
+    get:
+      parameters:
+      - description: the request game ID to search.
+        explode: false
+        in: path
+        name: gameId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NftItem'
+                type: array
+          description: Get nft item list success.
+      summary: Get NFT items by gameId from server
+      tags:
+      - marketplace
+      x-accepts: application/json
+      x-tags:
+      - tag: marketplace
+  /marketplace/{tokenId}/deals:
+    get:
+      parameters:
+      - description: the request tokenId.
+        explode: false
+        in: path
+        name: tokenId
+        required: true
+        schema:
+          format: int64
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Deal'
+                type: array
+          description: Get deals success.
+      summary: Get NFT item deals by tokenId from server
+      tags:
+      - marketplace
+      x-accepts: application/json
+      x-tags:
+      - tag: marketplace
+  /marketplace/bid/save:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BidSaveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bid'
+          description: 出价买成功
+        "403":
+          description: 出价买失败，参数错误
+      summary: NFT出价买
+      tags:
+      - marketplace
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: marketplace
+  /marketplace/ask/save:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskSaveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NftItem'
+          description: 出价成功.
+        "403":
+          description: 出价失败，参数错误
+      summary: NFT出价卖
+      tags:
+      - marketplace
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: marketplace
+  /marketplace/ask/accept:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskAcceptRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deal'
+          description: 成交成功
+        "403":
+          description: 成交失败，参数错误
+      summary: 接受NFT卖单价格并成交
+      tags:
+      - marketplace
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: marketplace
+  /marketplace/bid/accept:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BidAcceptRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deal'
+          description: 成交成功
+        "403":
+          description: 成交失败，参数错误
+      summary: 接受NFT买单价格并成交
+      tags:
+      - marketplace
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: marketplace
+components:
+  schemas:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+    Response:
+      example:
+        data: "{}"
+        message: message
+      properties:
+        data:
+          description: return data of response
+          type: object
+        message:
+          description: message of response
+          type: string
+      type: object
+    LoginRequest:
+      example:
+        jwtToken: jwtToken
+      properties:
+        jwtToken:
+          description: jwt token fetched from firebase.
+          type: string
+      required:
+      - jwtToken
+      type: object
+    User:
+      example:
+        emailVerified: 6
+        subscriber: subscriber
+        registerTime: 1
+        id: 0
+        userName: userName
+        locale: locale
+        email: email
+        picture: picture
+      properties:
+        id:
+          description: userId saved in system
+          format: int64
+          type: integer
+        userName:
+          description: name of the user
+          type: string
+        email:
+          description: email address of the user
+          type: string
+        emailVerified:
+          description: Is the email verified(1)
+          type: integer
+        picture:
+          description: image of the user
+          type: string
+        locale:
+          description: locale of the user
+          type: string
+        subscriber:
+          description: Unique key for the user
+          type: string
+        registerTime:
+          description: Time stamp of user created time.
+          format: int64
+          type: integer
+      type: object
+    UserEditRequest:
+      example:
+        userName: userName
+        picture: picture
+      properties:
+        userName:
+          description: change user name .
+          type: string
+        picture:
+          description: the unique picture for user.
+          type: string
+      type: object
+    Game:
+      example:
+        coverImageUrl: coverImageUrl
+        line: line
+        nid: nid
+        description: description
+        orderWeight: 5
+        screenshot: screenshot
+        secret: secret
+        createTimestamp: 5
+        faviconUrl: faviconUrl
+        twitter: twitter
+        gameServerUrl: gameServerUrl
+        company: company
+        callbackUrl: callbackUrl
+        id: 0
+        iconUrl: iconUrl
+        state: 6
+        introduction: introduction
+        email: email
+        highlightType: 1
+        cdnUrl: cdnUrl
+        facebook: facebook
+        name: name
+        shortName: shortName
+        category: category
+        slogan: slogan
+      properties:
+        id:
+          description: GameId saved in system
+          format: int64
+          type: integer
+        nid:
+          description: 游戏版本号
+          type: string
+        name:
+          description: 游戏名
+          type: string
+        shortName:
+          description: 游戏短名
+          type: string
+        category:
+          description: 游戏分类
+          type: string
+        slogan:
+          description: 标题下短句
+          type: string
+        description:
+          description: 中篇描述
+          type: string
+        introduction:
+          description: 详细页用长篇介绍
+          type: string
+        iconUrl:
+          description: icon
+          type: string
+        faviconUrl:
+          description: small favicon
+          type: string
+        screenshot:
+          description: list of 5 pics
+          type: string
+        coverImageUrl:
+          description: 封面图片
+          type: string
+        email:
+          description: 游戏CP公司邮箱
+          type: string
+        company:
+          description: Company name of the game.
+          type: string
+        twitter:
+          description: Company twitter.
+          type: string
+        facebook:
+          description: facebook
+          type: string
+        line:
+          description: line
+          type: string
+        cdnUrl:
+          description: Cdn download url.
+          type: string
+        gameServerUrl:
+          description: 游戏服务器Url
+          type: string
+        callbackUrl:
+          description: Call back url.
+          type: string
+        state:
+          description: 游戏状态 0 准备;1 测试;2 公开
+          type: integer
+        highlightType:
+          description: "列表中的高亮,Normal\\New\\Hot"
+          type: integer
+        orderWeight:
+          description: 游戏列表中排列顺序
+          type: integer
+        secret:
+          description: "游戏验证用secret,与id并用"
+          type: string
+        createTimestamp:
+          description: created time.
+          format: int64
+          type: integer
+      type: object
+    GameItem:
+      example:
+        gameId: 6
+        price: 1
+        pictureUrl: pictureUrl
+        name: name
+        id: 0
+      properties:
+        id:
+          description: Id of the game item.
+          format: int64
+          type: integer
+        gameId:
+          description: Id of the game.
+          format: int64
+          type: integer
+        name:
+          description: name of the item
+          type: string
+        pictureUrl:
+          description: url of the picture
+          type: string
+        price:
+          description: price of this item.
+          format: int64
+          type: integer
+      type: object
+    BalanceInfo:
+      description: user balance info
+      example:
+        value: 0
+        account: account
+      properties:
+        account:
+          description: account of user web3Auth.
+          type: string
+        value:
+          description: quantity of user account.
+          format: int64
+          type: integer
+      type: object
+    NftItem:
+      example:
+        gameId: 6
+        priceChange: 7.0614014
+        owner: owner
+        image: image
+        externalUrl: externalUrl
+        itemType: itemType
+        gasFee: 2.302136
+        tokenId: 1
+        description: description
+        lockState: lockState
+        tradeState: 9
+        suggestedPrice: 5.962134
+        animationUrl: animationUrl
+        price: 5.637377
+        name: name
+        id: 0
+      properties:
+        id:
+          description: Id of nft item
+          format: int64
+          type: integer
+        gameId:
+          description: Id of the game.
+          format: int64
+          type: integer
+        tokenId:
+          description: tokenId of nft item ( base on contract data)\
+          format: int64
+          type: integer
+        name:
+          description: name of nft
+          type: string
+        description:
+          description: description of nft
+          type: string
+        image:
+          description: url of image
+          type: string
+        animationUrl:
+          description: "url of animation source, base on metadata"
+          type: string
+        externalUrl:
+          description: "link of nft, base on metadata"
+          type: string
+        itemType:
+          description: nft item type
+          type: string
+        suggestedPrice:
+          description: suggested price of this item
+          format: float
+          type: number
+        price:
+          description: latest price of this item
+          format: float
+          type: number
+        gasFee:
+          description: gas fee of this item
+          format: float
+          type: number
+        priceChange:
+          description: Fluctuation range(Chg)
+          format: float
+          type: number
+        owner:
+          description: the nft owner address
+          type: string
+        lockState:
+          description: the nft lock state
+          type: string
+        tradeState:
+          description: NFT状态 0 准备;1 测试;2 公开
+          type: integer
+      type: object
+    Deal:
+      example:
+        seller: seller
+        tokenId: 6
+        price: 1.4658129
+        dealTimestamp: 5
+        id: 0
+        txHash: txHash
+        buyer: buyer
+      properties:
+        id:
+          description: Id of deal
+          format: int64
+          type: integer
+        txHash:
+          description: txHash of the trade
+          type: string
+        tokenId:
+          description: tokenId of the nft.
+          format: int64
+          type: integer
+        price:
+          description: price of deal
+          format: float
+          type: number
+        seller:
+          description: address of seller
+          type: string
+        buyer:
+          description: address of buyer
+          type: string
+        dealTimestamp:
+          description: deal time.
+          format: int64
+          type: integer
+      type: object
+    Bid:
+      example:
+        seller: seller
+        expireTimestamp: 5
+        price: 1.4658129
+        nftId: 6
+        id: 0
+        createTimestamp: 5
+      properties:
+        id:
+          description: Id of bid
+          format: int64
+          type: integer
+        nftId:
+          description: NFT 数据库对应ID
+          type: integer
+        price:
+          description: price of deal
+          format: float
+          type: number
+        seller:
+          description: subscriber of user 用户唯一标识
+          type: string
+        createTimestamp:
+          description: 创建时间
+          format: int64
+          type: integer
+        expireTimestamp:
+          description: 过期时间
+          format: int64
+          type: integer
+      type: object
+    BidSaveRequest:
+      example:
+        expireTimestamp: 6
+        price: ""
+        nftId: 0
+      properties:
+        nftId:
+          description: NFT 数据库对应ID
+          type: integer
+        price:
+          description: 出价
+          type: float
+        expireTimestamp:
+          description: 过期时间
+          format: int64
+          type: integer
+      required:
+      - expireTimestamp
+      - nftId
+      - price
+      type: object
+    AskSaveRequest:
+      example:
+        price: ""
+        nftId: 0
+      properties:
+        nftId:
+          description: NFT 数据库对应ID
+          type: integer
+        price:
+          description: 出价
+          type: float
+      required:
+      - nftId
+      - price
+      type: object
+    BidAcceptRequest:
+      example:
+        nftId: 0
+        bidId: 6
+      properties:
+        nftId:
+          description: NFT 数据库对应ID
+          type: integer
+        bidId:
+          description: NFT 的出价ID
+          type: integer
+      required:
+      - bidId
+      - nftId
+      type: object
+    AskAcceptRequest:
+      example:
+        nftId: 0
+      properties:
+        nftId:
+          description: NFT 数据库对应ID
+          type: integer
+      required:
+      - nftId
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http
